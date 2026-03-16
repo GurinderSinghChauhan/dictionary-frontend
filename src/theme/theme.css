@@ -1,0 +1,56 @@
+:root {
+  --background-gradient: linear-gradient(135deg, #f5f5f5, #f5f5f5);
+  --background-color: rgba(0,0,0,0);
+  --accent-color: #000000;
+  --primary-color: #000000;
+  --secondary-color: #000000;
+  --header-gradient: linear-gradient(120deg, #e5e3e3, #e5e3e3);
+
+
+  
+  --primary-text-color: #1a1a1a;
+  --secondary-text-color: #555555;
+  --border-color: #cbcbce;
+  --link-hover-color: #2563EB;
+
+  --font-heading:  'Courier New', Courier, monospace;
+  --font-body:  'Courier New', Courier, monospace;
+
+  /* NEW */
+}
+
+[data-theme="light"],
+[data-theme="dark"] {
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+[data-theme="dark"] {
+  --background-gradient: linear-gradient(135deg, #1f1f1f, #1f1f1f);
+  --background-color: rgba(0,0,0,0);
+  --accent-color: #ffffff;
+  --primary-color: #ffffff;
+  --secondary-color: #ffffff;
+  --header-gradient: linear-gradient(120deg, #454545, #454545);
+
+
+
+  --primary-text-color: #FAFAFA;
+  --secondary-text-color: #A3A3A3;
+  --border-color: #8c8989;
+  --link-hover-color: #2563EB;
+
+  /* DARK HEADER */
+}
+
+.main-container {
+  background-color: var(--background-color);
+  color: var(--primary-text-color);
+  font-family: var(--font-body);
+  padding: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .main-container {
+    /* padding: 4rem; */
+  }
+}
