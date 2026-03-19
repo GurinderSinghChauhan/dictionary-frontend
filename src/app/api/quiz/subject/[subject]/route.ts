@@ -1,12 +1,11 @@
 // src/app/api/quiz/subject/[subject]/route.ts
 import { connectToDB } from "@/lib/mongodb";
-import { getOpenAIClient, parseOpenAIJson } from "@/lib/openai";
+import { buildQuizFromWords, pickRandomWords, type QuizSourceWord } from "@/lib/quiz-utils";
 import SubjectWords from "@/models/SubjectWords";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   try {
-    const openai = getOpenAIClient();
     await connectToDB();
     const url = req.nextUrl;
     const subject = url.pathname.split("/").pop();
@@ -25,56 +24,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Select 5 random words
-    const sample = (subjectEntry.words as { word: string; imageURL?: string }[])
-      .sort(() => 0.5 - Math.random())
-      .slice(0, 5);
-
-    const prompt = `Generate a JSON array of 5 multiple-choice vocabulary quiz questions using these words: ${sample
-      .map((w) => w.word)
-      .join(", ")}. Each object must follow this exact format:
-
-    {
-      "word": "string",
-      "question": "string",
-      "options": ["string", "string", "string", "string"],
-      "correctAnswer": "string",
-      "explanation": "string"
-    }
-
-Make sure questions are simple and contextually useful. Only return the array, nothing else.`;
-
-    const response = await openai.chat.completions.create({
-      model: "gpt-4.1-nano",
-      messages: [{ role: "user", content: prompt }],
-    });
-
-    function shuffleArray(array: string[]) {
-      return array.sort(() => Math.random() - 0.5);
-    }
-
-    const rawQuestions = parseOpenAIJson<
-      Array<{
-        word: string;
-        question: string;
-        options: string[];
-        correctAnswer: string;
-        explanation: string;
-      }>
-    >(response.choices[0].message.content);
-
-    // Attach imageURL from original word list
-    const questionsWithImages = rawQuestions.map((q: any) => {
-      const options = shuffleArray([...q.options]);
-      const match = sample.find(
-        (w) => w.word.toLowerCase() === q.word.toLowerCase()
-      );
-      return {
-        ...q,
-        imageURL: match?.imageURL || null,
-        options,
-      };
-    });
+    const sample = pickRandomWords(subjectEntry.words as QuizSourceWord[], 5);
+    const questionsWithImages = buildQuizFromWords(sample);
 
     return NextResponse.json({ success: true, data: questionsWithImages });
   } catch (err: any) {

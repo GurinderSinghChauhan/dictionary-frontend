@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/mongodb";
 import Word from "@/models/Word";
-import { getWordDetails } from "@/lib/word-utils";
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,16 +14,18 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Word is required" }, { status: 400 });
     }
 
-    const existing = await Word.findOne({ word: term });
+    const existing = await Word.findOne({
+      word: new RegExp(`^${term}$`, "i"),
+    });
 
     if (existing) {
       return NextResponse.json({ term, result: existing });
     }
 
-    const wordData = await getWordDetails(term);
-    const savedWord = await Word.create(wordData);
-
-    return NextResponse.json({ term, result: savedWord });
+    return NextResponse.json(
+      { error: `Word '${term}' not found in dictionary.` },
+      { status: 404 }
+    );
   } catch (err) {
     console.log("❌ Error:", err);
     return NextResponse.json(

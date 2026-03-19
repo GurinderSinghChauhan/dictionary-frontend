@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/mongodb";
-import { getOpenAIClient, parseOpenAIJson } from "@/lib/openai";
+import { buildQuizFromWords } from "@/lib/quiz-utils";
 import ExamWords from "@/models/ExamWords";
 
 function getRandomIndices(length: number, count: number) {
@@ -11,13 +11,8 @@ function getRandomIndices(length: number, count: number) {
   return Array.from(indices);
 }
 
-function shuffleArray(array: string[]) {
-  return array.sort(() => Math.random() - 0.5);
-}
-
 export async function GET(req: NextRequest) {
   try {
-    const openai = getOpenAIClient();
     await connectToDB();
 
     const url = req.nextUrl;
@@ -44,57 +39,7 @@ export async function GET(req: NextRequest) {
     const total = examDoc.words.length;
     const indices = getRandomIndices(total, Math.min(5, total));
     const selectedWordObjs = indices.map((i) => examDoc.words[i]);
-    const selectedWords = selectedWordObjs.map((w) => w.word);
-
-    const prompt = `
-You're an expert exam coach. Create ${
-      selectedWords.length
-    } beginner-friendly vocabulary quiz questions designed for the "${exam
-      .replace("-", " ")
-      .toUpperCase()}" exam.
-
-Each quiz question must be a JSON object with these fields:
-{
-  "word": "string",
-  "question": "string",
-  "options": ["string", "string", "string", "string"],
-  "correctAnswer": "string",
-  "explanation": "string"
-}
-
-Rules:
-- Use the words: ${selectedWords.join(", ")}
-- Each question should ask the meaning or best synonym.
-- Options must be realistic but not confusing.
-- Explanations should be simple and informative.
-- Format output as a JSON array. No extra commentary.
-`;
-
-    const response = await openai.chat.completions.create({
-      model: "gpt-4.1-nano",
-      messages: [{ role: "user", content: prompt }],
-    });
-
-    const parsed = parseOpenAIJson<
-      Array<{
-        word: string;
-        question: string;
-        options: string[];
-        correctAnswer: string;
-        explanation: string;
-      }>
-    >(response.choices[0].message.content);
-
-    const enriched = parsed.map((q: any) => {
-      const match = selectedWordObjs.find(
-        (w) => w.word.toLowerCase() === q.word.toLowerCase()
-      );
-      return {
-        ...q,
-        imageURL: match?.imageURL || null,
-        options: shuffleArray([...q.options]),
-      };
-    });
+    const enriched = buildQuizFromWords(selectedWordObjs);
 
     return NextResponse.json({ success: true, data: enriched });
   } catch (err: any) {

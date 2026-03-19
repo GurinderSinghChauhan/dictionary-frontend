@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/mongodb";
-import { getOpenAIClient, parseOpenAIJson } from "@/lib/openai";
+import { buildQuizFromWords } from "@/lib/quiz-utils";
 import Word from "@/models/Word";
 
 export async function GET() {
   try {
-    const openai = getOpenAIClient();
     await connectToDB();
 
     // Step 1: Get total count of words in the DB
@@ -20,62 +19,9 @@ export async function GET() {
     // Step 2: Sample 5 random words
     const randomWords = await Word.aggregate([{ $sample: { size: 5 } }]);
 
-    // Step 3: Prepare words for prompt
-    const wordList = randomWords.map((w) => w.word).join(", ");
+    const quiz = buildQuizFromWords(randomWords);
 
-    // Step 4: Send prompt to OpenAI
-    const prompt = `
-Generate 5 beginner-friendly multiple choice vocabulary questions for the following words: ${wordList}
-
-Each object must follow this exact JSON format:
-{
-  "word": "string",
-  "question": "string",
-  "options": ["string", "string", "string", "string"],
-  "correctAnswer": "string",
-  "explanation": "string"
-}
-
-Rules:
-- Use simple definitions suitable for learners in grades 6–10.
-- Avoid technical, rare, or confusing words.
-- Make each option believable.
-- Explanations must be clear and brief.
-- Return ONLY a valid JSON array of 5 items.
-`;
-
-    const response = await openai.chat.completions.create({
-      model: "gpt-4.1-nano",
-      messages: [{ role: "user", content: prompt }],
-    });
-
-    function shuffleArray(array: string[]) {
-      return array.sort(() => Math.random() - 0.5);
-    }
-
-    const quizData = parseOpenAIJson<
-      Array<{
-        word: string;
-        question: string;
-        options: string[];
-        correctAnswer: string;
-        explanation: string;
-      }>
-    >(response.choices[0].message.content);
-
-    // Step 5: Merge imageURL from DB into quiz questions
-    const enrichedQuiz = quizData.map((q: any) => {
-      const match = randomWords.find(
-        (w) => w.word.toLowerCase() === q.word.toLowerCase()
-      );
-      return {
-        ...q,
-        imageURL: match?.imageURL || null,
-        options: shuffleArray([...q.options]),
-      };
-    });
-
-    return NextResponse.json({ success: true, data: enrichedQuiz });
+    return NextResponse.json({ success: true, data: quiz });
   } catch (err: any) {
     console.log("❌ Quiz API Error:", err.message);
     return NextResponse.json(

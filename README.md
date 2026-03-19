@@ -7,7 +7,6 @@ GrabVocab is a Next.js 15 vocabulary-learning app with dictionary lookup, word-o
 - Node.js 20+
 - npm
 - MongoDB connection string
-- OpenAI API key
 
 ## Setup
 
@@ -36,7 +35,6 @@ The app will run at `http://localhost:3000`.
 Required:
 
 - `MONGODB_URI`
-- `OPENAI_API_KEY`
 
 Recommended for NextAuth deployments:
 
@@ -66,3 +64,35 @@ Current repository status after the recent fixes:
 - `npm run lint` passes
 - `npx tsc --noEmit` passes
 - `npm run build` passes
+
+## Automated Vercel Deployment
+
+This repo includes a GitHub Actions workflow at [`.github/workflows/vercel-deploy.yml`](/Users/anurag/gschauhan/dictionary-frontend/.github/workflows/vercel-deploy.yml).
+
+Behavior:
+
+- pull requests into `main` create a Vercel preview deployment
+- pushes to `main` create a Vercel production deployment
+- `workflow_dispatch` lets you run it manually from GitHub
+
+Required GitHub repository secrets:
+
+- `VERCEL_TOKEN`
+- `VERCEL_ORG_ID`
+- `VERCEL_PROJECT_ID`
+
+Get the Vercel values by linking the project locally once:
+
+```bash
+npm install --global vercel
+vercel login
+vercel link
+cat .vercel/project.json
+```
+
+Also make sure your Vercel project has these runtime environment variables configured in the Vercel dashboard:
+
+- `MONGODB_URI`
+- `NEXTAUTH_URL`
+- `NEXTAUTH_SECRET`
+- optional Google/Facebook auth variables if you want social login enabled

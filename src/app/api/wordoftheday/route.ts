@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/mongodb";
+import Word from "@/models/Word";
 import WordOfDay from "@/models/WordOfDay";
-import { getRandomWordFromOpenAI } from "@/lib/openai";
-import { getWordDetails } from "@/lib/word-utils";
 
 export async function GET() {
   try {
@@ -15,8 +14,14 @@ export async function GET() {
       return NextResponse.json(existing);
     }
 
-    const word = await getRandomWordFromOpenAI();
-    const wordData = await getWordDetails(word);
+    const [wordData] = await Word.aggregate([{ $sample: { size: 1 } }]);
+
+    if (!wordData?.word || !wordData?.meaning) {
+      return NextResponse.json(
+        { error: "No words available for word of the day" },
+        { status: 404 }
+      );
+    }
 
     const saved = await WordOfDay.create({
       word: wordData.word,
