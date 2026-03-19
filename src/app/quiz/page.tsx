@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { FaBrain, FaLightbulb, FaQuestionCircle } from "react-icons/fa";
 
@@ -13,6 +14,7 @@ export default function QuickQuizPage() {
   const [loading, setLoading] = useState(true);
   const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [resultImageLoaded, setResultImageLoaded] = useState<Record<string, boolean>>({});
 
   const current = quiz[step];
 
@@ -73,9 +75,8 @@ export default function QuickQuizPage() {
   };
 
   const nextQuiz = () => {
-    resetQuiz();
     setLoading(true);
-    fetchQuiz();
+    resetQuiz();
   };
 
   if (loading) return <p className="p-6">Loading quiz...</p>;
@@ -107,17 +108,22 @@ export default function QuickQuizPage() {
               >
                 {q.imageURL && (
                   <div className="w-full md:w-1/2 flex justify-center items-center relative">
-                    {!imageLoaded && (
+                    {!resultImageLoaded[q.word] && (
                       <div className="absolute inset-0 flex justify-center items-center bg-white/70 rounded-lg z-10">
                         <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
                       </div>
                     )}
-                    <img
+                    <Image
                       src={q.imageURL}
                       alt={q.word}
-                      onLoad={() => setImageLoaded(true)}
-                      className={`w-full aspect-square object-cover rounded-lg transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"
-                        }`}
+                      width={800}
+                      height={800}
+                      onLoad={() =>
+                        setResultImageLoaded((prev) => ({ ...prev, [q.word]: true }))
+                      }
+                      className={`w-full aspect-square object-cover rounded-lg transition-opacity duration-300 ${
+                        resultImageLoaded[q.word] ? "opacity-100" : "opacity-0"
+                      }`}
                     />
                   </div>
                 )}
@@ -197,12 +203,15 @@ export default function QuickQuizPage() {
                     <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
                   </div>
                 )}
-                <img
+                <Image
                   src={current.imageURL}
                   alt={current.word}
+                  width={800}
+                  height={800}
                   onLoad={() => setImageLoaded(true)}
-                  className={`w-full aspect-square object-cover rounded-lg transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"
-                    }`}
+                  className={`w-full aspect-square object-cover rounded-lg transition-opacity duration-300 ${
+                    imageLoaded ? "opacity-100" : "opacity-0"
+                  }`}
                 />
               </div>
             )}

@@ -1,17 +1,16 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export default function SafariInstallBanner() {
-  const [isSafari, setIsSafari] = useState(false);
+  const [isSafari] = useState(() => {
+    if (typeof navigator === "undefined") return false;
 
-  useEffect(() => {
-    const isSafariBrowser =
+    return (
       /^((?!chrome|android).)*safari/i.test(navigator.userAgent) &&
       "standalone" in navigator &&
-      !navigator.standalone;
-
-    setIsSafari(isSafariBrowser);
-  }, []);
+      !navigator.standalone
+    );
+  });
 
   if (!isSafari) return null;
 
@@ -19,7 +18,7 @@ export default function SafariInstallBanner() {
     <div className="fixed bottom-4 left-4 right-4 bg-white text-black border rounded-lg shadow-md p-4 z-50">
       <p className="text-sm">
         📱 To install this app, tap the <strong>Share</strong> button and select{" "}
-        <strong>"Add to Home Screen"</strong>.
+        <strong>&quot;Add to Home Screen&quot;</strong>.
       </p>
     </div>
   );

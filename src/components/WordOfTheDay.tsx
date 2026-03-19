@@ -21,14 +21,9 @@ const colorOptions = [
 export default function WordOfTheDay() {
   const router = useRouter();
   const [wordData, setWordData] = useState<WordData | null>(null);
-  const [colorClass, setColorClass] = useState("");
-
-  useEffect(() => {
-    const randomColor =
-      colorOptions[Math.floor(Math.random() * colorOptions.length)];
-    setColorClass(randomColor);
-    fetchWordOfTheDay();
-  }, []);
+  const [colorClass] = useState(
+    () => colorOptions[Math.floor(Math.random() * colorOptions.length)]
+  );
 
   const speak = (text: string) => {
     const msg = new SpeechSynthesisUtterance(text);
@@ -55,15 +50,29 @@ export default function WordOfTheDay() {
     return date.toLocaleDateString("en-US", options);
   };
 
-  const fetchWordOfTheDay = async () => {
-    try {
-      const response = await axios.get("/api/wordoftheday");
-      setWordData(response.data);
-    } catch (error) {
-      console.log("Error fetching word of the day:", error);
-      setWordData(null);
-    }
-  };
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadWordOfTheDay = async () => {
+      try {
+        const response = await axios.get("/api/wordoftheday");
+        if (isMounted) {
+          setWordData(response.data);
+        }
+      } catch (error) {
+        console.log("Error fetching word of the day:", error);
+        if (isMounted) {
+          setWordData(null);
+        }
+      }
+    };
+
+    void loadWordOfTheDay();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   if (!wordData) return <p className="p-4 text-secondaryText">Loading...</p>;
 

@@ -1,9 +1,8 @@
 import { WordDetails } from "@/types/word";
-import OpenAI from "openai";
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+import { getOpenAIClient, parseOpenAIJson } from "@/lib/openai";
 
 export async function getWordDetails(word: string): Promise<WordDetails> {
+  const openai = getOpenAIClient();
   const prompt = `
     Provide a detailed dictionary-style breakdown of the word: "${word}". 
     Format your response as a valid JSON object with the following keys exactly:
@@ -29,7 +28,7 @@ export async function getWordDetails(word: string): Promise<WordDetails> {
   });
 
   try {
-    const data: WordDetails = JSON.parse(response.choices[0].message.content!);
+    const data = parseOpenAIJson<WordDetails>(response.choices[0].message.content);
     return data;
   } catch (err) {
     console.log("Failed to parse:", err);

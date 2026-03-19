@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { FaVolumeHigh, FaBookOpen, FaWandMagicSparkles } from "react-icons/fa6";
 import { BiSearch } from "react-icons/bi";
@@ -43,13 +44,15 @@ export default function WordDetailsDisplay({ term }: { term: string }) {
   const [result, setResult] = useState<WordResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [colorClass, setColorClass] = useState("");
+  const [colorClass] = useState(
+    () => colorOptions[Math.floor(Math.random() * colorOptions.length)]
+  );
 
   const speak = (text: string) => {
     const synth = window.speechSynthesis;
-    let voices = synth.getVoices();
+    const voices = synth.getVoices();
     if (!voices.length) {
-      synth.onvoiceschanged = () => speak(text);
+      synth.addEventListener("voiceschanged", () => speak(text), { once: true });
       return;
     }
 
@@ -72,12 +75,6 @@ export default function WordDetailsDisplay({ term }: { term: string }) {
     utterance.lang = "en-US";
     synth.speak(utterance);
   };
-
-  useEffect(() => {
-    const randomColor =
-      colorOptions[Math.floor(Math.random() * colorOptions.length)];
-    setColorClass(randomColor);
-  }, []);
 
   useEffect(() => {
     if (!term) return;
@@ -145,9 +142,11 @@ export default function WordDetailsDisplay({ term }: { term: string }) {
         {/* Image */}
         {result.imageURL && (
           <div className="w-full lg:w-1/2">
-            <img
+            <Image
               src={result.imageURL}
               alt={result.word}
+              width={800}
+              height={800}
               className="w-full rounded-2xl shadow-md object-cover aspect-square"
             />
           </div>

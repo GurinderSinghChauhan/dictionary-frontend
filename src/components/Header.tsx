@@ -38,17 +38,35 @@ export default function Header() {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLUListElement>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState();
+  const [user, setUser] = useState<any>(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const storedUser = localStorage.getItem("user");
+    if (!storedUser) return undefined;
+
+    try {
+      return JSON.parse(storedUser);
+    } catch (err) {
+      console.error("Error parsing user:", err);
+      return undefined;
+    }
+  });
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window === "undefined" ? false : window.innerWidth < 640
+  );
+  const [theme, setTheme] = useState(() =>
+    typeof window === "undefined" ? "light" : localStorage.getItem("theme") || "light"
+  );
 
   // Debug: Log the current mobile state
   console.log('Current isMobile state:', isMobile);
   const dropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   const { data: session } = useSession();
+  const displayUser = user ?? session?.user;
+  const isLoggedIn = Boolean(displayUser);
 
   // Check if device is mobile
   useEffect(() => {
@@ -58,16 +76,7 @@ export default function Header() {
       setIsMobile(isMobileView);
     };
 
-    // Check immediately
-    checkMobile();
-
-    // Also check on resize
     window.addEventListener('resize', checkMobile);
-
-    // Set initial state based on screen size
-    if (typeof window !== 'undefined') {
-      setIsMobile(window.innerWidth < 640);
-    }
 
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
@@ -76,7 +85,6 @@ export default function Header() {
     const handleUserUpdate = (e: any) => {
       const updatedUser = e.detail;
       setUser(updatedUser);
-      setIsLoggedIn(true);
     };
 
     window.addEventListener("user-updated", handleUserUpdate);
@@ -85,29 +93,6 @@ export default function Header() {
       window.removeEventListener("user-updated", handleUserUpdate);
     };
   }, []);
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        console.log(parsedUser);
-        setUser(parsedUser as any);
-        setIsLoggedIn(true);
-      } catch (err) {
-        console.error("Error parsing user:", err);
-        setUser(undefined);
-        setIsLoggedIn(false);
-      }
-    } else if (session?.user) {
-      setUser(session.user as any);
-      setIsLoggedIn(true);
-    } else {
-      setUser(undefined);
-      setIsLoggedIn(false);
-    }
-  }, [session]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -182,15 +167,9 @@ export default function Header() {
     isLoggedIn ? "Logout" : "Login / Signup",
   ];
 
-  // Theme toggle logic
-  const [theme, setTheme] = useState("light");
   useEffect(() => {
-    const savedTheme = typeof window !== 'undefined' ? localStorage.getItem("theme") || "light" : "light";
-    setTheme(savedTheme);
-    if (typeof document !== 'undefined') {
-      document.documentElement.setAttribute("data-theme", savedTheme);
-    }
-  }, []);
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
 
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
@@ -360,7 +339,7 @@ export default function Header() {
                         borderColor: 'var(--border-color)',
                       }}
                     >
-                      {(user as any)?.username || (user as any)?.name || (user as any)?.email}
+                      {displayUser?.username || displayUser?.name || displayUser?.email}
                     </span>
                   </div>
                 </div>
@@ -450,7 +429,7 @@ export default function Header() {
             >
               <FaUser className="text-base" style={{ color: "var(--accent-color)" }} />
               <span className="px-3 py-1 rounded-full border text-[#4dabf7] bg-[#e6f4ff] border-[#b5dcff] font-semibold">
-                {(user as any)?.username || (user as any)?.name || (user as any)?.email}
+                {displayUser?.username || displayUser?.name || displayUser?.email}
               </span>
             </div>
           )}

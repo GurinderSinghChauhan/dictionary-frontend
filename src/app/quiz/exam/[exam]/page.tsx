@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import {
@@ -31,6 +32,7 @@ export default function ExamQuizPage() {
   const [isImageLoading, setIsImageLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resultImageError, setResultImageError] = useState<Record<string, boolean>>({});
 
   const hasFetched = useRef(false);
   const current = quiz[step];
@@ -88,6 +90,7 @@ export default function ExamQuizPage() {
     setSelectedAnswers([]);
     setIsImageLoading(true); // Reset image loading state
     setImageError(false);
+    setResultImageError({});
   };
 
   const nextQuiz = () => {
@@ -134,14 +137,19 @@ export default function ExamQuizPage() {
                 </p>
 
                 {q.imageURL && (
-                  <img
-                    src={q.imageURL}
-                    alt={q.word}
-                    className="w-full h-52 object-cover rounded mb-4"
-                    onError={(e) => {
-                      console.error('Failed to load image in results:', q.imageURL);
-                    }}
-                  />
+                  !resultImageError[q.word] && (
+                    <Image
+                      src={q.imageURL}
+                      alt={q.word}
+                      width={800}
+                      height={208}
+                      className="w-full h-52 object-cover rounded mb-4"
+                      onError={() => {
+                        console.error("Failed to load image in results:", q.imageURL);
+                        setResultImageError((prev) => ({ ...prev, [q.word]: true }));
+                      }}
+                    />
+                  )
                 )}
 
                 <ul className="list-disc pl-6 mb-2">
@@ -225,9 +233,11 @@ export default function ExamQuizPage() {
                     </span>
                   </div>
                 )}
-                <img
+                <Image
                   src={current.imageURL}
                   alt={current.word}
+                  width={800}
+                  height={512}
                   onLoad={() => {
                     setIsImageLoading(false);
                     setImageError(false);
@@ -235,10 +245,10 @@ export default function ExamQuizPage() {
                   onError={() => {
                     setIsImageLoading(false);
                     setImageError(true);
-                    console.error('Failed to load image:', current.imageURL);
+                    console.error("Failed to load image:", current.imageURL);
                   }}
                   className="w-full h-64 object-cover rounded-md"
-                  style={{ display: isImageLoading || imageError ? 'none' : 'block' }}
+                  style={{ display: isImageLoading || imageError ? "none" : "block" }}
                 />
               </div>
             )}

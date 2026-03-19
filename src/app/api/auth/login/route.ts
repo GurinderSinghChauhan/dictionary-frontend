@@ -24,9 +24,18 @@ export async function POST(req: NextRequest) {
         { status: 401 }
       );
     }
-    // const hashedPassword = await bcrypt.hash(password, 10);
-    // const isMatch = await bcrypt.compare(hashedPassword, user.password);
-    const isMatch = password === user.password;
+
+    if (!user.password) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "This account uses social login. Please sign in with Google or Facebook.",
+        },
+        { status: 401 }
+      );
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
       return NextResponse.json(

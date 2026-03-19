@@ -20,38 +20,52 @@ interface Word {
   imageURL?: string;
 }
 
-const colorOptions = [
-  "bg-blue-100",
-  "bg-green-100",
-  "bg-yellow-100",
-  "bg-red-100",
-  "bg-purple-100",
-];
-
 const DictionaryWords = () => {
   const [words, setWords] = useState<Word[]>([]);
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(false);
-
-  const fetchWords = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get(`/api/dictionary`, {
-        params: { page, limit: limit, search: "" },
-      });
-      setWords(res.data.wordsArray || []);
-      setTotalPages(res.data.totalPages || 1);
-    } catch (err) {
-      console.error("Failed to fetch words:", err);
-    }
-    setLoading(false);
-  };
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchWords();
-  }, [page]);
+    let isMounted = true;
+
+    const fetchWords = async () => {
+      try {
+        const res = await axios.get(`/api/dictionary`, {
+          params: { page, limit, search: "" },
+        });
+
+        if (!isMounted) return;
+
+        setWords(res.data.wordsArray || []);
+        setTotalPages(res.data.totalPages || 1);
+      } catch (err) {
+        if (!isMounted) return;
+        console.error("Failed to fetch words:", err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void fetchWords();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [page, limit]);
+
+  const handlePageChange = (nextPage: number) => {
+    setLoading(true);
+    setPage(nextPage);
+  };
+
+  const handleLimitChange = (nextLimit: number) => {
+    setLoading(true);
+    setLimit(nextLimit);
+  };
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -75,8 +89,8 @@ const DictionaryWords = () => {
         <PaginationControls
           limit={limit}
           page={page}
-          setLimit={setLimit}
-          setPage={setPage}
+          setLimit={handleLimitChange}
+          setPage={handlePageChange}
           totalPages={totalPages}
         />
       )}

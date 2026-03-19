@@ -1,13 +1,14 @@
 import type { NextConfig } from "next";
 
-const withPWA = require('next-pwa')({
-  dest: 'public'
-})
+const withPWA = require("next-pwa")({
+  dest: "public",
+  // One generated client chunk is just over the default 2 MiB precache ceiling.
+  maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+});
 
 const nextConfig: NextConfig = {
-  /* config options here */
   images: {
-    domains: ['dictionary-images-directory.s3.eu-north-1.amazonaws.com'],
+    domains: ["dictionary-images-directory.s3.eu-north-1.amazonaws.com"],
   },
 };
 

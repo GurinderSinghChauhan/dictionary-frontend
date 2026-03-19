@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Image from "next/image";
+import { useState } from "react";
 import { FaVolumeUp, FaBrain, FaGlobeAmericas } from "react-icons/fa";
 import { BsFillBookFill, BsChatLeftQuoteFill } from "react-icons/bs";
 import { MdCategory, MdOutlineSyncAlt } from "react-icons/md";
@@ -36,14 +37,16 @@ export default function SubjectWordDetailsDisplay({
 }: {
   data: Worddata;
 }) {
-  const [colorClass, setColorClass] = useState("");
+  const [colorClass] = useState(
+    () => colorOptions[Math.floor(Math.random() * colorOptions.length)]
+  );
 
   const speak = (text: string) => {
     const synth = window.speechSynthesis;
-    let voices = synth.getVoices();
+    const voices = synth.getVoices();
 
     if (!voices.length) {
-      synth.onvoiceschanged = () => speak(text);
+      synth.addEventListener("voiceschanged", () => speak(text), { once: true });
       return;
     }
 
@@ -68,12 +71,6 @@ export default function SubjectWordDetailsDisplay({
     utterance.lang = "en-US";
     synth.speak(utterance);
   };
-
-  useEffect(() => {
-    const randomColor =
-      colorOptions[Math.floor(Math.random() * colorOptions.length)];
-    setColorClass(randomColor);
-  }, []);
 
   return (
     <div
@@ -101,9 +98,11 @@ export default function SubjectWordDetailsDisplay({
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
         {data.imageURL && (
           <div className="col-span-1">
-            <img
+            <Image
               src={data.imageURL}
               alt={data.word}
+              width={800}
+              height={800}
               className="w-full max-w-full h-auto rounded-xl shadow-md object-cover"
             />
           </div>

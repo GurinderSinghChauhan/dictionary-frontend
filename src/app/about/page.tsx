@@ -19,7 +19,7 @@ export default function AboutPage() {
           Grab Vocab
         </strong>{" "}
         — your dedicated space to grow your vocabulary and strengthen your
-        language skills. Words are powerful, and we’re here to help you master
+        language skills. Words are powerful, and we&apos;re here to help you master
         them.
       </p>
 
@@ -33,7 +33,7 @@ export default function AboutPage() {
       </p>
 
       <p className="mb-6 text-2xl leading-relaxed font-light">
-        Whether you're preparing for competitive exams, enhancing your academic
+        Whether you&apos;re preparing for competitive exams, enhancing your academic
         language, or just feeding your curiosity, Grab Vocab adapts to your
         journey. Every feature, every word, and every lesson is designed to
         empower you with clarity and confidence.

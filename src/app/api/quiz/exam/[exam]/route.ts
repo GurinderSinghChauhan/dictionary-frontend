@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/mongodb";
+import { getOpenAIClient, parseOpenAIJson } from "@/lib/openai";
 import ExamWords from "@/models/ExamWords";
-import OpenAI from "openai";
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 function getRandomIndices(length: number, count: number) {
   const indices = new Set<number>();
@@ -19,6 +17,7 @@ function shuffleArray(array: string[]) {
 
 export async function GET(req: NextRequest) {
   try {
+    const openai = getOpenAIClient();
     await connectToDB();
 
     const url = req.nextUrl;
@@ -76,15 +75,15 @@ Rules:
       messages: [{ role: "user", content: prompt }],
     });
 
-    const raw = response.choices[0].message.content || "[]";
-
-    let parsed: any[];
-    try {
-      parsed = JSON.parse(raw);
-    } catch (err) {
-      console.log("❌ JSON Parse Error:", raw);
-      throw new Error("OpenAI returned invalid JSON format.");
-    }
+    const parsed = parseOpenAIJson<
+      Array<{
+        word: string;
+        question: string;
+        options: string[];
+        correctAnswer: string;
+        explanation: string;
+      }>
+    >(response.choices[0].message.content);
 
     const enriched = parsed.map((q: any) => {
       const match = selectedWordObjs.find(

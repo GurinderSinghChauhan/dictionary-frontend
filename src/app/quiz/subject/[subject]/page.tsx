@@ -1,7 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import { useParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FaBrain,
   FaTrophy,
@@ -31,25 +32,12 @@ export default function SubjectQuizPage() {
   const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]);
   const [isImageLoading, setIsImageLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [resultImageError, setResultImageError] = useState<Record<string, boolean>>({});
   const hasFetched = useRef(false);
 
   const current = quiz[step];
 
-  useEffect(() => {
-    if (!subject || hasFetched.current) return;
-    hasFetched.current = true;
-    fetchQuiz();
-  }, [subject]);
-
-  // Reset image loading state when step changes and there's an image
-  useEffect(() => {
-    if (current?.imageURL) {
-      setIsImageLoading(true);
-      setImageError(false);
-    }
-  }, [step, current?.imageURL]);
-
-  const fetchQuiz = async () => {
+  const fetchQuiz = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`/api/quiz/subject/${subject}`);
@@ -64,7 +52,21 @@ export default function SubjectQuizPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [subject]);
+
+  useEffect(() => {
+    if (!subject || hasFetched.current) return;
+    hasFetched.current = true;
+    void fetchQuiz();
+  }, [subject, fetchQuiz]);
+
+  // Reset image loading state when step changes and there's an image
+  useEffect(() => {
+    if (current?.imageURL) {
+      setIsImageLoading(true);
+      setImageError(false);
+    }
+  }, [step, current?.imageURL]);
 
   const handleAnswer = (option: string) => {
     setSelectedAnswers((prev) => [...prev, option]);
@@ -89,12 +91,13 @@ export default function SubjectQuizPage() {
     setSelectedAnswers([]);
     setIsImageLoading(true); // Reset image loading state
     setImageError(false);
+    setResultImageError({});
   };
 
   const nextQuiz = () => {
     hasFetched.current = false;
     resetQuiz();
-    fetchQuiz();
+    void fetchQuiz();
   };
 
   if (loading) return <p className="p-6 text-gray-700">Loading quiz...</p>;
@@ -127,11 +130,18 @@ export default function SubjectQuizPage() {
                 </p>
 
                 {q.imageURL && (
-                  <img
-                    src={q.imageURL}
-                    alt={q.word}
-                    className="w-full object-cover rounded-md"
-                  />
+                  !resultImageError[q.word] && (
+                    <Image
+                      src={q.imageURL}
+                      alt={q.word}
+                      width={800}
+                      height={500}
+                      onError={() =>
+                        setResultImageError((prev) => ({ ...prev, [q.word]: true }))
+                      }
+                      className="w-full object-cover rounded-md"
+                    />
+                  )
                 )}
 
                 <ul className="pl-4 space-y-1">
@@ -222,9 +232,11 @@ export default function SubjectQuizPage() {
                     </span>
                   </div>
                 )}
-                <img
+                <Image
                   src={current.imageURL}
                   alt={current.word}
+                  width={800}
+                  height={512}
                   onLoad={() => {
                     setIsImageLoading(false);
                     setImageError(false);
@@ -232,10 +244,10 @@ export default function SubjectQuizPage() {
                   onError={() => {
                     setIsImageLoading(false);
                     setImageError(true);
-                    console.error('Failed to load image:', current.imageURL);
+                    console.error("Failed to load image:", current.imageURL);
                   }}
                   className="w-full h-64 object-cover rounded-md"
-                  style={{ display: isImageLoading || imageError ? 'none' : 'block' }}
+                  style={{ display: isImageLoading || imageError ? "none" : "block" }}
                 />
               </div>
             )}

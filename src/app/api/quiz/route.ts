@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
 import { connectToDB } from "@/lib/mongodb";
+import { getOpenAIClient, parseOpenAIJson } from "@/lib/openai";
 import Word from "@/models/Word";
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 export async function GET() {
   try {
+    const openai = getOpenAIClient();
     await connectToDB();
 
     // Step 1: Get total count of words in the DB
@@ -56,8 +53,15 @@ Rules:
       return array.sort(() => Math.random() - 0.5);
     }
 
-    const content = response.choices[0].message.content || "";
-    const quizData = JSON.parse(content);
+    const quizData = parseOpenAIJson<
+      Array<{
+        word: string;
+        question: string;
+        options: string[];
+        correctAnswer: string;
+        explanation: string;
+      }>
+    >(response.choices[0].message.content);
 
     // Step 5: Merge imageURL from DB into quiz questions
     const enrichedQuiz = quizData.map((q: any) => {

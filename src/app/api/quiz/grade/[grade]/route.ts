@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/mongodb";
+import { getOpenAIClient, parseOpenAIJson } from "@/lib/openai";
 import GradeWords from "@/models/GradeWords";
-import OpenAI from "openai";
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 function getRandomIndices(length: number, count: number) {
   const indices = new Set<number>();
@@ -19,6 +17,7 @@ function shuffleArray(array: string[]) {
 
 export async function GET(req: NextRequest) {
   try {
+    const openai = getOpenAIClient();
     const url = req.nextUrl;
     const grade = url.pathname.split("/").pop();
     await connectToDB();
@@ -81,15 +80,15 @@ Only return the array. Format must be strict JSON, no extra text.
       messages: [{ role: "user", content: prompt }],
     });
 
-    const content = response.choices?.[0]?.message?.content || "[]";
-
-    let quiz;
-    try {
-      quiz = JSON.parse(content);
-    } catch (parseErr) {
-      console.log("❌ Failed to parse OpenAI response:", parseErr);
-      throw new Error("OpenAI returned invalid JSON.");
-    }
+    const quiz = parseOpenAIJson<
+      Array<{
+        word: string;
+        question: string;
+        options: string[];
+        correctAnswer: string;
+        explanation: string;
+      }>
+    >(response.choices?.[0]?.message?.content);
 
     const enrichedQuiz = quiz.map((q: any) => {
       const match = selectedWordObjs.find(

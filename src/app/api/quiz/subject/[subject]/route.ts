@@ -1,13 +1,12 @@
 // src/app/api/quiz/subject/[subject]/route.ts
 import { connectToDB } from "@/lib/mongodb";
+import { getOpenAIClient, parseOpenAIJson } from "@/lib/openai";
 import SubjectWords from "@/models/SubjectWords";
 import { NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
 export async function GET(req: NextRequest) {
   try {
+    const openai = getOpenAIClient();
     await connectToDB();
     const url = req.nextUrl;
     const subject = url.pathname.split("/").pop();
@@ -54,9 +53,15 @@ Make sure questions are simple and contextually useful. Only return the array, n
       return array.sort(() => Math.random() - 0.5);
     }
 
-    const content = response.choices[0].message.content || "[]";
-
-    const rawQuestions = JSON.parse(content);
+    const rawQuestions = parseOpenAIJson<
+      Array<{
+        word: string;
+        question: string;
+        options: string[];
+        correctAnswer: string;
+        explanation: string;
+      }>
+    >(response.choices[0].message.content);
 
     // Attach imageURL from original word list
     const questionsWithImages = rawQuestions.map((q: any) => {
