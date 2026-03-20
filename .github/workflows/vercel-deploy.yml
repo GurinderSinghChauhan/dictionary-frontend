@@ -103,7 +103,7 @@ jobs:
         id: release-tag
         run: |
           VERSION="$(node -p "require('./package.json').version")"
-          TAG="release-v${VERSION}-${GITHUB_RUN_NUMBER}"
+          TAG="v${VERSION}-build-${GITHUB_RUN_NUMBER}"
           echo "value=${TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Create git tag
