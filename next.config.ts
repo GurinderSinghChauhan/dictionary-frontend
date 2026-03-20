@@ -8,7 +8,12 @@ const withPWA = require("next-pwa")({
 
 const nextConfig: NextConfig = {
   images: {
-    domains: ["dictionary-images-directory.s3.eu-north-1.amazonaws.com"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "dictionary-images-directory.s3.eu-north-1.amazonaws.com",
+      },
+    ],
   },
 };
 
