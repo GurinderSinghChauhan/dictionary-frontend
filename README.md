@@ -74,12 +74,18 @@ Behavior:
 - pull requests into `main` create a Vercel preview deployment
 - pushes to `main` create a Vercel production deployment
 - `workflow_dispatch` lets you run it manually from GitHub
+- successful production deployments create a Git tag and GitHub release like `release-v0.1.0-123`
+- production rollback is available through [`.github/workflows/vercel-rollback.yml`](/Users/anurag/gschauhan/dictionary-frontend/.github/workflows/vercel-rollback.yml)
 
 Required GitHub repository secrets:
 
 - `VERCEL_TOKEN`
 - `VERCEL_ORG_ID`
 - `VERCEL_PROJECT_ID`
+
+GitHub Actions permissions used:
+
+- `contents: write` on the deploy workflow so it can create release tags
 
 Get the Vercel values by linking the project locally once:
 
@@ -96,3 +102,15 @@ Also make sure your Vercel project has these runtime environment variables confi
 - `NEXTAUTH_URL`
 - `NEXTAUTH_SECRET`
 - optional Google/Facebook auth variables if you want social login enabled
+
+## Rollback
+
+Each successful production deploy creates an immutable Git tag and GitHub release.
+
+To roll back:
+
+1. Open `Actions` in GitHub
+2. Run `Vercel Rollback`
+3. Enter the release tag you want to restore, for example `release-v0.1.0-42`
+
+The rollback workflow checks out that exact tag and redeploys it to Vercel production.

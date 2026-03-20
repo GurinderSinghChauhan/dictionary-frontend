@@ -9,6 +9,9 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   deploy-preview:
     if: github.event_name == 'pull_request'
@@ -16,6 +19,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -53,9 +58,13 @@ jobs:
   deploy-production:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.release-tag.outputs.value }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -89,3 +98,29 @@ jobs:
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Compute release tag
+        id: release-tag
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          TAG="release-v${VERSION}-${GITHUB_RUN_NUMBER}"
+          echo "value=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Create git tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${{ steps.release-tag.outputs.value }}" -m "Production release ${{ steps.release-tag.outputs.value }}"
+          git push origin "${{ steps.release-tag.outputs.value }}"
+
+  publish-release:
+    if: github.event_name == 'push'
+    needs: deploy-production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.deploy-production.outputs.release_tag }}
+          name: ${{ needs.deploy-production.outputs.release_tag }}
+          generate_release_notes: true
